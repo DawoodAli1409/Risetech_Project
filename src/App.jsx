@@ -14,7 +14,7 @@ import UserPage from './Pages/UserPage';
 import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { setUser, clearUser } from './store/userSlice';
-import { fetchUserFromDawood } from './firebaseDawood'; // ✅ Required import
+import { fetchUserFromDawood } from './firebaseDawood'; 
 
 const theme = createTheme({
   palette: {
