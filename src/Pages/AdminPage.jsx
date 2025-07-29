@@ -286,6 +286,7 @@ const AdminPage = () => {
     } finally {
       setDeleteDialog({ open: false, id: null });
     }
+    
   };
 
   return (
