@@ -16,7 +16,7 @@ const PrivateRoute = ({ children, allowedRoles }) => {
   }
 
   if (!allowedRoles.includes(user.role)) {
-    return <Navigate to="/risetech-project/" replace />;
+    return <Navigate to="/Risetech_Project/" replace />;
   }
 
   return children;

@@ -141,7 +141,7 @@ const router = createBrowserRouter(
     },
   ],
   {
-    basename: '/risetech-project',
+    basename: '/Risetech_Project',
   }
 );
 
