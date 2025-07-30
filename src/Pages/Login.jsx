@@ -106,7 +106,7 @@ const Login = () => {
       if (userRole === 'admin') {
         navigate('/admin', { replace: true });
       } else {
-        navigate('/', { replace: true });
+        navigate('/user', { replace: true });
       }
       setIsLoading(false);
     } catch (error) {
@@ -156,7 +156,7 @@ const Login = () => {
         isAuthenticated: true
       }));
 
-      navigate('/risetech-project/');
+      navigate('/Risetech_Project/');
     } catch (error) {
       console.error('Google sign-in error:', error);
       setAuthError('Google sign-in failed. Please try again.');
@@ -311,7 +311,7 @@ const Login = () => {
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    navigate('/risetech-project/password-reset');
+                    navigate('/password-reset');
                   }}
                   underline="hover"
                   sx={{ cursor: 'pointer' }}
@@ -325,7 +325,7 @@ const Login = () => {
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    navigate('/risetech-project/register');
+                    navigate('/register');
                   }}
                   underline="hover"
                   sx={{ cursor: 'pointer' }}

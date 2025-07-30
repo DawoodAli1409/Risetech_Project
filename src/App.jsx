@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { createBrowserRouter, RouterProvider, useNavigate } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, useNavigate, Navigate } from 'react-router-dom';
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import { Provider, useDispatch } from 'react-redux';
 import store from './store';
@@ -12,6 +12,7 @@ import PrivateRoute from './components/PrivateRoute';
 import AdminPage from './Pages/AdminPage';
 import UserPage from './Pages/UserPage';
 import AdminTeachers from './Pages/AdminTeachers';
+import Layout from './components/Layout';
 import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { setUser, clearUser } from './store/userSlice';
@@ -54,7 +55,7 @@ function AuthInitializer({ children }) {
             if (role === 'admin') {
               navigate('/admin');
             } else {
-              navigate('/');
+              navigate('/user');
             }
           } else {
             setIsLoading(false);
@@ -83,66 +84,60 @@ const router = createBrowserRouter(
   [
     {
       path: '/',
-      element: (
-        <AuthInitializer>
-          <PrivateRoute allowedRoles={['user', 'admin']}>
-            <UserPage />
-          </PrivateRoute>
-        </AuthInitializer>
-      ),
+      element: <Layout />,
       errorElement: <ErrorPage />,
-    },
-    {
-      path: '/login',
-      element: (
-        <>
-          <Navbar />
-          <Login />
-        </>
-      ),
-    },
-    {
-      path: '/register',
-      element: (
-        <>
-          <Navbar />
-          <Register />
-        </>
-      ),
-    },
-    {
-      path: '/verify-email',
-      element: (
-        <>
-          <Navbar />
-          <VerifyEmail />
-        </>
-      ),
-    },
-    {
-      path: '/password-reset',
-      element: (
-        <>
-          <Navbar />
-          <PasswordReset />
-        </>
-      ),
-    },
-    {
-      path: '/admin',
-      element: (
-        <PrivateRoute allowedRoles={['admin']}>
-          <AdminPage />
-        </PrivateRoute>
-      ),
-    },
-    {
-      path: '/admin/teachers',
-      element: (
-        <PrivateRoute allowedRoles={['admin']}>
-          <AdminTeachers />
-        </PrivateRoute>
-      ),
+      children: [
+        {
+          path: '',
+          element: <Navigate to="/login" replace />,
+        },
+        {
+          path: 'login',
+          element: <Login />,
+        },
+        {
+          path: 'user',
+          element: (
+            <AuthInitializer>
+              <PrivateRoute allowedRoles={['user', 'admin']}>
+                <UserPage />
+              </PrivateRoute>
+            </AuthInitializer>
+          ),
+        },
+        {
+          path: 'admin',
+          element: (
+            <AuthInitializer>
+              <PrivateRoute allowedRoles={['admin']}>
+                <AdminPage />
+              </PrivateRoute>
+            </AuthInitializer>
+          ),
+        },
+        {
+          path: 'admin/teachers',
+          element: (
+            <AuthInitializer>
+              <PrivateRoute allowedRoles={['admin']}>
+                <AdminTeachers />
+              </PrivateRoute>
+            </AuthInitializer>
+          ),
+        },
+        {
+          path: 'register',
+          element: <Register />,
+        },
+        {
+          path: 'verify-email',
+          element: <VerifyEmail />,
+        },
+        {
+          path: 'password-reset',
+          element: <PasswordReset />,
+        },
+      ],
     },
     {
       path: '*',

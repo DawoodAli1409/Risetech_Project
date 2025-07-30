@@ -13,8 +13,6 @@ import { collection, addDoc, getDocs, updateDoc, doc, deleteDoc, onSnapshot } fr
 import { useSelector } from 'react-redux';
 import { db, auth } from '../firebase';
 import { addTeacher, addMail } from '../firebaseDawood';
-import Navbar from '../components/Navbar';
-
 const storage = getStorage();
 
 const AdminTeachers = () => {
@@ -206,7 +204,6 @@ const AdminTeachers = () => {
 
   return (
     <>
-      <Navbar />
       <Box sx={{ p: 4 }}>
         <Typography variant="h4" gutterBottom>
           Teacher Management

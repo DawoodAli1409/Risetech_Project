@@ -399,7 +399,7 @@ const Register = () => {
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    navigate('/risetech-project/password-reset');
+                    navigate('/password-reset');
                   }}
                   underline="hover"
                   sx={{ cursor: 'pointer' }}
@@ -413,7 +413,7 @@ const Register = () => {
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    navigate('/risetech-project/login');
+                    navigate('/login');
                   }}
                   underline="hover"
                   sx={{ cursor: 'pointer' }}
