@@ -11,6 +11,7 @@ import PasswordReset from './Pages/PasswordReset';
 import PrivateRoute from './components/PrivateRoute';
 import AdminPage from './Pages/AdminPage';
 import UserPage from './Pages/UserPage';
+import AdminTeachers from './Pages/AdminTeachers';
 import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { setUser, clearUser } from './store/userSlice';
@@ -132,6 +133,14 @@ const router = createBrowserRouter(
       element: (
         <PrivateRoute allowedRoles={['admin']}>
           <AdminPage />
+        </PrivateRoute>
+      ),
+    },
+    {
+      path: '/admin/teachers',
+      element: (
+        <PrivateRoute allowedRoles={['admin']}>
+          <AdminTeachers />
         </PrivateRoute>
       ),
     },
