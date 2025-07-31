@@ -38,15 +38,51 @@ const Register = () => {
         palette: {
           mode: darkMode ? 'dark' : 'light',
           primary: {
-            main: '#1565c0',
+            main: '#008080', // teal color
           },
           background: {
-            default: darkMode ? '#121212' : '#f0f4f8',
-            paper: darkMode ? '#1d1d1d' : '#ffffff',
+            default: darkMode ? '#121212' : '#f5f7fa',
+            paper: darkMode ? '#1e1e1e' : '#ffffff',
+          },
+          secondary: {
+            main: '#1565c0', // blue accent
           },
         },
         typography: {
-          fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+          fontFamily: "'Poppins', 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+          button: {
+            textTransform: 'none',
+            fontWeight: 600,
+          },
+        },
+        shape: {
+          borderRadius: 12,
+        },
+        components: {
+          MuiOutlinedInput: {
+            styleOverrides: {
+              root: {
+                borderRadius: 12,
+                transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#008080',
+                  boxShadow: '0 0 8px rgba(0, 128, 128, 0.3)',
+                },
+              },
+            },
+          },
+          MuiButton: {
+            styleOverrides: {
+              root: {
+                borderRadius: 12,
+                transition: 'background-color 0.3s ease, transform 0.3s ease',
+                '&:hover': {
+                  backgroundColor: '#005f5f',
+                  transform: 'scale(1.05)',
+                },
+              },
+            },
+          },
         },
       }),
     [darkMode]
@@ -159,19 +195,19 @@ const Register = () => {
       <Container maxWidth="sm">
         <Box
           sx={{
-            marginTop: 3,
+            mt: 3,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            padding: 2,
+            p: 3,
             boxShadow: 6,
-            borderRadius: 6,
-            backgroundColor: 'background.paper',
+            borderRadius: 4,
+            background: darkMode
+              ? 'linear-gradient(135deg, #0f2027, #203a43, #2c5364)'
+              : 'linear-gradient(135deg, #e0f7fa, #80deea, #26c6da)',
             width: '100%',
             maxWidth: 420,
             mx: 'auto',
-            mt: 5,
-            mb: 3,
             transition: 'box-shadow 0.3s ease-in-out',
             '&:hover': {
               boxShadow: 12,
