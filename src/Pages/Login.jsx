@@ -156,7 +156,12 @@ const Login = () => {
         isAuthenticated: true
       }));
 
-      navigate('/Risetech_Project/');
+      // Redirect based on role from database
+      if (userRole === 'admin') {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/user', { replace: true });
+      }
     } catch (error) {
       console.error('Google sign-in error:', error);
       setAuthError('Google sign-in failed. Please try again.');
@@ -164,6 +169,8 @@ const Login = () => {
       setIsLoading(false);
     }
   };
+
+  
 
   return (
     <ThemeProvider theme={theme}>

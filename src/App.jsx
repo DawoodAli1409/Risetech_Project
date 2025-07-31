@@ -12,6 +12,7 @@ import PrivateRoute from './components/PrivateRoute';
 import AdminPage from './Pages/AdminPage';
 import UserPage from './Pages/UserPage';
 import AdminTeachers from './Pages/AdminTeachers';
+import AddProject from './Pages/AddProject';
 import Layout from './components/Layout';
 import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -101,6 +102,16 @@ const router = createBrowserRouter(
             <AuthInitializer>
               <PrivateRoute allowedRoles={['user', 'admin']}>
                 <UserPage />
+              </PrivateRoute>
+            </AuthInitializer>
+          ),
+        },
+        {
+          path: 'project',
+          element: (
+            <AuthInitializer>
+              <PrivateRoute allowedRoles={['user', 'admin']}>
+                <AddProject />
               </PrivateRoute>
             </AuthInitializer>
           ),
