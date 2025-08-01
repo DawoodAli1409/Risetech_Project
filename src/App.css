@@ -64,3 +64,106 @@
     min-width: 600px;
   }
 }
+
+/* General responsive styles for mobile devices */
+@media (max-width: 768px) {
+  /* Navbar full width */
+  .navbar {
+    width: 100% !important;
+    height: auto !important;
+    flex-direction: row !important;
+  }
+
+  /* Sidebar full width and horizontal on mobile */
+  .sidebar {
+    width: 100% !important;
+    height: auto !important;
+    flex-direction: row !important;
+    overflow-x: auto;
+  }
+
+  /* Main content adjustments */
+  .main-content {
+    padding: 1rem !important;
+    width: 100% !important;
+  }
+
+  /* Ensure all page content is visible */
+  body, html, #root {
+    overflow-x: hidden;
+  }
+}
+
+/* Additional responsive styles for very small screens */
+@media (max-width: 480px) {
+  /* Navbar adjustments */
+  .navbar {
+    font-size: 0.9rem !important;
+    padding: 0.5rem !important;
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    z-index: 1000;
+  }
+
+  /* Sidebar hidden by default */
+  .sidebar {
+    display: none !important;
+  }
+
+  /* Main content full width with padding */
+  .main-content {
+    padding: 1rem !important;
+    margin-left: 0 !important;
+    margin-top: 60px !important; /* height of navbar */
+  }
+
+  /* Cards and images scale down */
+  .card {
+    padding: 1rem !important;
+    font-size: 0.9rem !important;
+  }
+
+  /* Prevent horizontal overflow */
+  body, html, #root {
+    overflow-x: hidden;
+  }
+}
+
+/* Sidebar visible toggle class for future JS toggle */
+.sidebar.visible {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 250px !important;
+  height: 100vh !important;
+  position: fixed !important;
+  top: 60px !important;
+  left: 0 !important;
+  background: linear-gradient(180deg, #007bff, #00d4ff);
+  z-index: 999;
+}
+
+/* General responsive styles for laptop and larger screens */
+@media (min-width: 769px) {
+  /* Navbar full width horizontally */
+  .navbar {
+    width: 100% !important;
+    height: 60px !important;
+    flex-direction: row !important;
+  }
+
+  /* Sidebar full height vertically */
+  .sidebar {
+    width: 250px !important;
+    height: 100vh !important;
+    flex-direction: column !important;
+    overflow-y: auto;
+  }
+
+  /* Main content adjustments */
+  .main-content {
+    margin-left: 250px !important;
+    padding: 2rem !important;
+  }
+}

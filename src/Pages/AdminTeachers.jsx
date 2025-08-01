@@ -1,106 +1,179 @@
-import React, { useEffect, useState, useRef } from 'react';
-import {
-  Box, Button, TextField, Radio, RadioGroup, FormControlLabel, FormLabel,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
-  IconButton, Dialog, DialogTitle, DialogActions, Typography,
-  Alert, Snackbar, CircularProgress
-} from '@mui/material';
+import React, { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
+import { db, auth } from '../firebase';
+import { collection, addDoc, getDocs, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { Switch, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Typography, CircularProgress, Fab, FormControlLabel, RadioGroup, Radio, FormLabel } from '@mui/material';
+import { styled } from '@mui/system';
+import { Box } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc, getDocs, updateDoc, doc, deleteDoc, onSnapshot } from 'firebase/firestore';
-import { useSelector } from 'react-redux';
-import { db, auth } from '../firebase';
-import { addTeacher, addMail } from '../firebaseDawood';
+import { useSpring, animated } from 'react-spring';
+
 const storage = getStorage();
 
+const TeacherCard = ({ teacher, onEdit, onDelete }) => {
+  const [hovered, setHovered] = useState(false);
+  const animationProps = useSpring({
+    transform: hovered ? 'scale(1.05)' : 'scale(1)',
+    boxShadow: hovered
+      ? '0 10px 20px rgba(33, 150, 243, 0.4)'
+      : '0 4px 10px rgba(0,0,0,0.1)',
+    border: hovered ? '2px solid #2196F3' : '2px solid transparent',
+    config: { tension: 300, friction: 20 },
+  });
+
+  return (
+    <animated.div
+      style={{ ...animationProps }}
+      className="bg-white rounded-lg p-4 flex flex-col shadow-md cursor-pointer"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div className="flex items-center space-x-4 mb-4">
+        <img
+          src={teacher.profilePicUrl}
+          alt={teacher.name}
+          className="max-w-[80px] max-h-[80px] rounded-full object-cover"
+          style={{ width: 'auto', height: 'auto', maxWidth: '80px', maxHeight: '80px' }}
+        />
+        <div>
+          <Typography variant="h6" className="font-semibold">{teacher.name}</Typography>
+          <Typography variant="body2" className="text-gray-600">{teacher.subject}</Typography>
+          <Typography variant="body2" className="text-gray-500 capitalize">{teacher.gender}</Typography>
+        </div>
+      </div>
+      <div className="flex justify-between mt-auto">
+        <Button
+          variant="outlined"
+          startIcon={<EditIcon />}
+          onClick={() => onEdit(teacher)}
+          className="transition-transform duration-150 active:scale-95"
+        >
+          Edit
+        </Button>
+        <Button
+          variant="outlined"
+          color="error"
+          startIcon={<DeleteIcon />}
+          onClick={() => onDelete(teacher.id)}
+          className="transition-transform duration-150 active:scale-95"
+        >
+          Delete
+        </Button>
+      </div>
+    </animated.div>
+  );
+};
+
+const DashboardTitle = styled(Typography)(({ theme }) => ({
+  fontFamily: '"Roboto Condensed", sans-serif',
+  fontWeight: 700,
+  textTransform: 'uppercase',
+  letterSpacing: '1.5px',
+  position: 'relative',
+  marginBottom: '2rem',
+  '&:after': {
+    content: '""',
+    position: 'absolute',
+    bottom: '-10px',
+    left: 0,
+    width: '60px',
+    height: '4px',
+    background: 'linear-gradient(45deg, #2196F3, #21CBF3)',
+    borderRadius: '2px',
+  },
+}));
+
+const GradientButton = styled(Button)(({ theme }) => ({
+  background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+  border: 0,
+  borderRadius: '8px',
+  boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
+  color: 'white',
+  height: 48,
+  padding: '0 30px',
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 5px 8px 3px rgba(33, 203, 243, .4)',
+    animation: `gradientAnimation 3s ease infinite`,
+    backgroundSize: '200% 200%',
+  },
+}));
+
 const AdminTeachers = () => {
-  const { register, handleSubmit, reset, setValue, control, formState: { errors }, clearErrors, setError } = useForm({
+  const { register, handleSubmit, reset, control, setValue, formState: { errors }, clearErrors } = useForm({
     mode: 'onSubmit',
     defaultValues: {
-      gender: ''
-    }
+      gender: 'male',
+    },
   });
 
   const [teachers, setTeachers] = useState([]);
-  const [editingId, setEditingId] = useState(null);
-  const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
-  const [profilePicPreview, setProfilePicPreview] = useState('');
-  const [notification, setNotification] = useState({ open: false, message: '', type: 'success' });
   const [loading, setLoading] = useState(false);
-  const [fetchingTeachers, setFetchingTeachers] = useState(false);
-
-  const role = useSelector(state => state.user.role);
+  const [fetching, setFetching] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingTeacher, setEditingTeacher] = useState(null);
+  const [profilePicPreview, setProfilePicPreview] = useState('');
 
   useEffect(() => {
-    const fetchTeachers = async () => {
-      if (!role) {
-        return;
-      }
-
-      setFetchingTeachers(true);
-
-      try {
-        const teacherCollection = collection(db, 'Teacher');
-        const snapshot = await getDocs(teacherCollection);
-
-        if (snapshot.empty) {
-          setTeachers([]);
-          showNotification('No teachers found in database', 'info');
-          return;
-        }
-
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setTeachers(data);
-        showNotification(`Loaded ${data.length} teachers`, 'success');
-
-      } catch (error) {
-        showNotification(`Error fetching teachers: ${error.message}`, 'error');
-      } finally {
-        setFetchingTeachers(false);
-      }
-    };
-
     fetchTeachers();
-  }, [role]);
+  }, []);
 
-  const showNotification = (message, type = 'success') => {
-    setNotification({ open: true, message, type });
+  const fetchTeachers = async () => {
+    setFetching(true);
+    try {
+      const teacherCollection = collection(db, 'Teacher');
+      const snapshot = await getDocs(teacherCollection);
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setTeachers(data);
+    } catch (error) {
+      console.error('Error fetching teachers:', error);
+    } finally {
+      setFetching(false);
+    }
   };
 
-  const handleCloseNotification = () => {
-    setNotification({ ...notification, open: false });
+  const openDialog = (teacher = null) => {
+    if (teacher) {
+      setEditingTeacher(teacher);
+      setValue('name', teacher.name);
+      setValue('email', teacher.email);
+      setValue('password', teacher.password);
+      setValue('subject', teacher.subject);
+      setValue('gender', teacher.gender);
+      setProfilePicPreview(teacher.profilePicUrl);
+    } else {
+      setEditingTeacher(null);
+      reset();
+      setProfilePicPreview('');
+    }
+    clearErrors();
+    setDialogOpen(true);
+  };
+
+  const closeDialog = () => {
+    setDialogOpen(false);
+    setEditingTeacher(null);
+    reset();
+    setProfilePicPreview('');
+    clearErrors();
   };
 
   const onSubmit = async (data) => {
     setLoading(true);
-
     try {
-      if (!auth.currentUser) {
-        throw new Error('User not authenticated. Please log in again.');
-      }
-
-      if (!editingId && (!data.profilePic || data.profilePic.length === 0)) {
-        setError('profilePic', {
-          type: 'manual',
-          message: 'Profile picture is required'
-        });
-        setLoading(false);
-        return;
-      }
-
-      let profilePicUrl = data.profilePicUrl || '';
+      let profilePicUrl = profilePicPreview || '';
 
       if (data.profilePic?.[0]) {
         const file = data.profilePic[0];
         const storageRef = ref(storage, `Teachers/${Date.now()}_${file.name}`);
-
         const snapshot = await uploadBytes(storageRef, file);
         profilePicUrl = await getDownloadURL(snapshot.ref);
       }
 
-      const now = new Date();
       const teacherData = {
         name: data.name,
         email: data.email,
@@ -108,164 +181,127 @@ const AdminTeachers = () => {
         subject: data.subject,
         gender: data.gender,
         profilePicUrl,
-        updatedAt: now,
-        createdAt: editingId ? data.createdAt || now : now,
+        updatedAt: new Date(),
+        createdAt: editingTeacher ? editingTeacher.createdAt : new Date(),
       };
 
       const teacherCollection = collection(db, 'Teacher');
 
-      if (editingId) {
-        const docRef = doc(db, 'Teacher', editingId);
+      if (editingTeacher) {
+        const docRef = doc(db, 'Teacher', editingTeacher.id);
         await updateDoc(docRef, teacherData);
-        setTeachers(prev => prev.map(t => t.id === editingId ? { id: editingId, ...teacherData } : t));
-        showNotification('Teacher updated successfully');
+        setTeachers(prev => prev.map(t => t.id === editingTeacher.id ? { id: editingTeacher.id, ...teacherData } : t));
       } else {
         const docRef = await addDoc(teacherCollection, teacherData);
-        const newTeacher = { id: docRef.id, ...teacherData };
-        setTeachers(prev => [...prev, newTeacher]);
-        showNotification('Teacher added successfully');
+        setTeachers(prev => [...prev, { id: docRef.id, ...teacherData }]);
       }
 
-      try {
-        const authToken = await auth.currentUser.getIdToken();
-        await addTeacher(teacherData, authToken);
-      } catch (dawoodError) {
-        // Non-critical error
-      }
-
-      try {
-        const mailData = {
-          to: data.email,
-          subject: 'Welcome to the Teaching Team',
-          message: {
-            text: `Hello ${data.name},\n\nWelcome to the teaching team! Your subject is ${data.subject}.`,
-            html: `<p>Hello <strong>${data.name}</strong>,</p><p>Welcome to the teaching team! Your subject is <strong>${data.subject}</strong>.</p>`
-          },
-          createdAt: now
-        };
-
-        const authToken = await auth.currentUser.getIdToken();
-        await addMail(mailData, authToken);
-      } catch (mailError) {
-        // Non-critical error
-      }
-
-      reset();
-      setProfilePicPreview('');
-      setEditingId(null);
-      clearErrors();
-
+      closeDialog();
     } catch (error) {
-      if (error.code === 'auth/id-token-expired' || error.message.includes('auth/id-token-expired')) {
-        showNotification('Session expired. Please log in again.', 'error');
-      } else if (error.code === 'permission-denied') {
-        showNotification('Permission denied. Check your Firestore security rules.', 'error');
-      } else {
-        showNotification(error.message || 'Error saving teacher', 'error');
-      }
+      console.error('Error saving teacher:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleEdit = (teacher) => {
-    setEditingId(teacher.id);
-    setValue('name', teacher.name);
-    setValue('email', teacher.email);
-    setValue('password', teacher.password);
-    setValue('subject', teacher.subject);
-    setValue('gender', teacher.gender);
-    setValue('profilePicUrl', teacher.profilePicUrl);
-    setValue('createdAt', teacher.createdAt);
-    setProfilePicPreview(teacher.profilePicUrl);
-    clearErrors();
-  };
-
-  const handleCancelEdit = () => {
-    setEditingId(null);
-    reset();
-    setProfilePicPreview('');
-    clearErrors();
-  };
-
-  const handleDelete = async () => {
-    if (!deleteDialog.id) return;
-
+  const handleDelete = async (id) => {
     try {
-      await deleteDoc(doc(db, 'Teacher', deleteDialog.id));
-      setTeachers(prev => prev.filter(t => t.id !== deleteDialog.id));
-      showNotification('Teacher deleted successfully');
+      await deleteDoc(doc(db, 'Teacher', id));
+      setTeachers(prev => prev.filter(t => t.id !== id));
     } catch (error) {
-      showNotification(error.message || 'Error deleting teacher', 'error');
-    } finally {
-      setDeleteDialog({ open: false, id: null });
+      console.error('Error deleting teacher:', error);
     }
   };
 
   return (
-    <>
-      <Box sx={{ p: 4 }}>
-        <Typography variant="h4" gutterBottom>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
+        <DashboardTitle variant="h4">
           Teacher Management
-        </Typography>
+        </DashboardTitle>
+        <GradientButton variant="contained" onClick={() => openDialog()}>
+          Add Teacher
+        </GradientButton>
+      </Box>
 
-        <Box className="admin-container" sx={{ mt: 4 }}>
-          <Box className="admin-form" component="form" onSubmit={handleSubmit(onSubmit)} sx={{ p: 3, boxShadow: 3, borderRadius: 2, mb: 3 }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        {fetching ? (
+          <div className="col-span-full flex justify-center items-center space-x-2">
+            <CircularProgress size={24} />
+            <Typography>Loading teachers...</Typography>
+          </div>
+        ) : teachers.length === 0 ? (
+          <Typography className="col-span-full text-center text-gray-600">
+            No teachers found. Add your first teacher using the button below.
+          </Typography>
+        ) : (
+          teachers.map(teacher => (
+            <TeacherCard
+              key={teacher.id}
+              teacher={teacher}
+              onEdit={openDialog}
+              onDelete={handleDelete}
+            />
+          ))
+        )}
+      </div>
+
+
+      <Dialog open={dialogOpen} onClose={closeDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>{editingTeacher ? 'Edit Teacher' : 'Add Teacher'}</DialogTitle>
+        <DialogContent>
+          <form id="teacher-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6" style={{ padding: '16px' }}>
             <TextField
-              fullWidth
               label="Name"
-              margin="normal"
+              fullWidth
               {...register('name', { required: 'Name is required' })}
               error={!!errors.name}
               helperText={errors.name?.message}
               disabled={loading}
+              margin="normal"
             />
-
             <TextField
-              fullWidth
               label="Email"
               type="email"
-              margin="normal"
+              fullWidth
               {...register('email', {
                 required: 'Email is required',
                 pattern: {
                   value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                  message: "Invalid email address"
-                }
+                  message: 'Invalid email address',
+                },
               })}
               error={!!errors.email}
               helperText={errors.email?.message}
               disabled={loading}
+              margin="normal"
             />
-
             <TextField
-              fullWidth
               label="Password"
               type="password"
-              margin="normal"
+              fullWidth
               {...register('password', {
                 required: 'Password is required',
                 minLength: {
                   value: 6,
-                  message: 'Password must be at least 6 characters'
-                }
+                  message: 'Password must be at least 6 characters',
+                },
               })}
               error={!!errors.password}
               helperText={errors.password?.message}
               disabled={loading}
-            />
-
-            <TextField
-              fullWidth
-              label="Subject"
               margin="normal"
+            />
+            <TextField
+              label="Subject"
+              fullWidth
               {...register('subject', { required: 'Subject is required' })}
               error={!!errors.subject}
               helperText={errors.subject?.message}
               disabled={loading}
+              margin="normal"
             />
-
-            <FormLabel sx={{ mt: 2, display: 'block' }}>Gender</FormLabel>
+            <FormLabel sx={{ mt: 2, mb: 1 }}>Gender</FormLabel>
             <Controller
               name="gender"
               control={control}
@@ -277,156 +313,37 @@ const AdminTeachers = () => {
                 </RadioGroup>
               )}
             />
-            {errors.gender && (
-              <Typography color="error" variant="caption" sx={{ ml: 1 }}>
-                {errors.gender.message}
-              </Typography>
-            )}
-
-            <Box sx={{ mt: 2 }}>
-              <FormLabel>Profile Picture</FormLabel>
-              <input
-                type="file"
-                accept="image/*"
-                {...register('profilePic', !editingId ? { required: 'Profile picture is required' } : {})}
-                onChange={(e) => {
-                  if (e.target.files?.[0]) {
-                    setProfilePicPreview(URL.createObjectURL(e.target.files[0]));
-                    clearErrors('profilePic');
-                  }
-                }}
-                style={{ display: 'block', marginTop: 8 }}
-                disabled={loading}
+            <input
+              type="file"
+              accept="image/*"
+              {...register('profilePic')}
+              onChange={(e) => {
+                if (e.target.files?.[0]) {
+                  setProfilePicPreview(URL.createObjectURL(e.target.files[0]));
+                  clearErrors('profilePic');
+                }
+              }}
+              disabled={loading}
+              style={{ marginTop: 16, marginBottom: 16 }}
+            />
+            {profilePicPreview && (
+              <img
+                src={profilePicPreview}
+                alt="Preview"
+                className="mt-2 rounded"
+                style={{ maxWidth: '150px', maxHeight: '150px', width: 'auto', height: 'auto' }}
               />
-              {profilePicPreview && (
-                <Box sx={{ mt: 2 }}>
-                  <img
-                    src={profilePicPreview}
-                    alt="Preview"
-                    style={{ maxWidth: '200px', borderRadius: '4px' }}
-                  />
-                </Box>
-              )}
-              {errors.profilePic && (
-                <Typography color="error" variant="caption" sx={{ mt: 1, display: 'block' }}>
-                  {errors.profilePic.message}
-                </Typography>
-              )}
-            </Box>
-
-            <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
-              <Button
-                type="submit"
-                variant="contained"
-                fullWidth
-                disabled={loading}
-                startIcon={loading && <CircularProgress size={20} />}
-              >
-                {loading ? 'Processing...' : editingId ? 'Update Teacher' : 'Add Teacher'}
-              </Button>
-              {editingId && (
-                <Button
-                  variant="outlined"
-                  onClick={handleCancelEdit}
-                  disabled={loading}
-                >
-                  Cancel
-                </Button>
-              )}
-            </Box>
-          </Box>
-
-          <TableContainer className="admin-table" component={Paper} sx={{}}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Subject</TableCell>
-                  <TableCell>Gender</TableCell>
-                  <TableCell>Profile</TableCell>
-                  <TableCell>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {fetchingTeachers ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center">
-                      <CircularProgress />
-                      <Typography variant="body2" sx={{ mt: 1 }}>Loading teachers...</Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : teachers.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center">
-                      <Typography variant="body2" color="textSecondary">
-                        No teachers found. Add your first teacher using the form.
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  teachers.map((teacher) => (
-                    <TableRow key={teacher.id}>
-                      <TableCell>{teacher.name}</TableCell>
-                      <TableCell>{teacher.email}</TableCell>
-                      <TableCell>{teacher.subject}</TableCell>
-                      <TableCell style={{ textTransform: 'capitalize' }}>{teacher.gender}</TableCell>
-                      <TableCell>
-                        {teacher.profilePicUrl && (
-                          <img
-                            src={teacher.profilePicUrl}
-                            alt="Profile"
-                            style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }}
-                          />
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <IconButton onClick={() => handleEdit(teacher)} disabled={loading}>
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton
-                          onClick={() => setDeleteDialog({ open: true, id: teacher.id })}
-                          color="error"
-                          disabled={loading}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Box>
-
-        <Dialog
-          open={deleteDialog.open}
-          onClose={() => setDeleteDialog({ open: false, id: null })}
-        >
-          <DialogTitle>Are you sure you want to delete this teacher?</DialogTitle>
-          <DialogActions>
-            <Button onClick={() => setDeleteDialog({ open: false, id: null })}>
-              Cancel
-            </Button>
-            <Button onClick={handleDelete} color="error">
-              Delete
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        <Snackbar
-          open={notification.open}
-          autoHideDuration={6000}
-          onClose={handleCloseNotification}
-          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-        >
-          <Alert onClose={handleCloseNotification} severity={notification.type} sx={{ width: '100%' }}>
-            {notification.message}
-          </Alert>
-        </Snackbar>
-      </Box>
-    </>
+            )}
+          </form>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDialog} disabled={loading}>Cancel</Button>
+          <Button form="teacher-form" type="submit" variant="contained" disabled={loading}>
+            {loading ? <CircularProgress size={20} /> : editingTeacher ? 'Update Teacher' : 'Add Teacher'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </div>
   );
 };
 

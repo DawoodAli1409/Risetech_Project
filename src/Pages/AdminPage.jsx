@@ -1,8 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Box, Typography, Grid, Card, CardContent, Fade, Slide } from '@mui/material';
+import { styled } from '@mui/system';
 import { useNavigate } from 'react-router-dom';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
+
+const DashboardTitle = styled(Typography)(({ theme }) => ({
+  fontFamily: "'Roboto Slab', serif",
+  fontWeight: 'bold',
+  textTransform: 'uppercase',
+  animation: 'fallDown 1.2s ease forwards',
+  opacity: 0,
+  marginTop: '-20px',
+  position: 'relative',
+  '@keyframes fallDown': {
+    '0%': {
+      opacity: 0,
+      transform: 'translateY(-50px)',
+    },
+    '100%': {
+      opacity: 1,
+      transform: 'translateY(0)',
+    },
+  },
+}));
 
 const AdminPage = () => {
   const navigate = useNavigate();
@@ -52,29 +73,9 @@ const AdminPage = () => {
 
   return (
     <Box sx={{ p: 4, textAlign: 'center' }}>
-      <Typography
-        variant="h4"
-        gutterBottom
-        sx={{
-          fontFamily: "'Roboto Slab', serif",
-          fontWeight: 'bold',
-          animation: 'fallDown 1.2s ease forwards',
-          opacity: 0,
-          marginTop: '-20px',
-          '@keyframes fallDown': {
-            '0%': {
-              opacity: 0,
-              transform: 'translateY(-50px)',
-            },
-            '100%': {
-              opacity: 1,
-              transform: 'translateY(0)',
-            },
-          },
-        }}
-      >
+      <DashboardTitle variant="h4" gutterBottom>
         Admin Dashboard
-      </Typography>
+      </DashboardTitle>
 
       <Fade in={loaded} timeout={600}>
         <Grid container spacing={4} justifyContent="center" sx={{ mb: 4 }}>

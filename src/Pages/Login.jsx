@@ -72,7 +72,7 @@ const Login = () => {
           MuiButton: {
             styleOverrides: {
               root: {
-                borderRadius: 12,
+                borderRadius: 16, // Increased from 12 to 16
                 transition: 'background-color 0.3s ease, transform 0.3s ease',
                 '&:hover': {
                   backgroundColor: '#005f5f',
@@ -293,6 +293,7 @@ const Login = () => {
                       py: 1.25,
                       fontWeight: 700,
                       fontSize: '1rem',
+                      borderRadius: '16px',
                       transition: 'background-color 0.3s ease, transform 0.3s ease',
                       '&:hover': {
                         backgroundColor: '#004d40',
@@ -319,6 +320,7 @@ const Login = () => {
                       py: 1.25,
                       fontWeight: 700,
                       fontSize: '1rem',
+                      borderRadius: '16px',
                       transition: 'background-color 0.3s ease, transform 0.3s ease',
                       borderColor: '#008080',
                       color: '#008080',
