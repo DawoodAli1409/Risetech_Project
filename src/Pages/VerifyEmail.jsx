@@ -21,6 +21,7 @@ const VerifyEmail = () => {
   const navigate = useNavigate();
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
   const [darkMode] = useState(prefersDarkMode);
+  const isSmallScreen = useMediaQuery('(max-width:768px)');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
@@ -140,7 +141,7 @@ const VerifyEmail = () => {
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ backgroundColor: 'transparent', minHeight: '100vh', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', pt: 1 }}>
-        <Container maxWidth="sm" sx={{ ml: '140px' }}>
+        <Container maxWidth="sm" sx={{ ml: isSmallScreen ? '20px' : '140px' }}>
           <Slide direction="down" in={slideIn} mountOnEnter timeout={800}>
             <Box
               sx={{

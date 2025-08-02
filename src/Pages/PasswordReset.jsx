@@ -17,7 +17,7 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { auth } from '../firebase';
 import { sendPasswordResetEmail } from 'firebase/auth';
 
-const PasswordReset = () => {
+const PasswordReset = ({ sidebarOpen }) => {
   const navigate = useNavigate();
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
   const [darkMode] = useState(prefersDarkMode);
@@ -26,9 +26,14 @@ const PasswordReset = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [slideIn, setSlideIn] = React.useState(false);
+  const isMobile = useMediaQuery('(max-width:600px)');
 
   React.useEffect(() => {
-    setSlideIn(true);
+    const timer = setTimeout(() => {
+      setSlideIn(true);
+    }, 150);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const theme = useMemo(
@@ -127,23 +132,60 @@ const PasswordReset = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <Box sx={{ backgroundColor: 'transparent', minHeight: '100vh', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', pt: 1 }}>
-        <Container maxWidth="sm" sx={{ ml: '140px' }}>
-          <Slide direction="down" in={slideIn} mountOnEnter timeout={800}>
+      <Box sx={{ 
+        backgroundColor: 'transparent', 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'flex-start', 
+        justifyContent: 'center', 
+        pt: isMobile ? '64px' : 1,
+        pb: 4,
+        width: isMobile && sidebarOpen ? 'calc(100% - 100px)' : '100vw',
+        position: isMobile ? 'relative' : 'fixed',
+        left: isMobile && sidebarOpen ? '100px' : 0,
+        right: 0,
+        transition: 'left 0.3s ease, width 0.3s ease',
+        overflowY: isMobile ? 'auto' : 'visible',
+      }}>
+        <Container 
+          maxWidth="sm" 
+          sx={{ 
+            width: isMobile && sidebarOpen ? 'calc(100% - 140px)' : isMobile ? '100%' : '500px',
+            maxWidth: isMobile && sidebarOpen ? '240px' : isMobile ? '316px' : '500px',
+            mx: 'auto',
+            px: isMobile ? 0.5 : 3,
+            transform: isMobile && sidebarOpen ? 'scale(0.85)' : 'scale(1)',
+            transition: 'transform 0.3s ease, width 0.3s ease',
+            overflow: 'hidden',
+          }}
+        >
+          <Slide 
+            direction="down" 
+            in={slideIn} 
+            mountOnEnter 
+            timeout={{
+              enter: 800,
+              exit: 400
+            }}
+            easing={{
+              enter: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+              exit: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+            }}
+          >
             <Box
               sx={{
                 mt: 1,
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                p: 2,
+                p: isMobile && sidebarOpen ? 1.5 : isMobile ? 2 : 4,
                 boxShadow: 6,
                 borderRadius: 4,
                 background: darkMode
                   ? 'linear-gradient(135deg, #0f2027, #203a43, #2c5364)'
                   : 'linear-gradient(135deg, #e0f7fa, #80deea, #26c6da)',
                 width: '100%',
-                maxWidth: 420,
+                maxWidth: isMobile ? '100%' : 420,
                 mx: 'auto',
                 transition: 'box-shadow 0.3s ease-in-out',
                 '&:hover': {
@@ -153,33 +195,40 @@ const PasswordReset = () => {
             >
               <Typography
                 component="h1"
-                variant="h4"
+                variant={isMobile ? 'h5' : 'h4'}
                 sx={{
-                  mb: 2,
+                  mb: isMobile && sidebarOpen ? 1.5 : 2,
                   fontWeight: 800,
                   color: 'primary.main',
                   fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-                  letterSpacing: '0.15em',
+                  letterSpacing: isMobile && sidebarOpen ? '0.05em' : '0.15em',
                   textTransform: 'uppercase',
                   textShadow: '1px 1px 2px rgba(0,0,0,0.2)',
+                  textAlign: 'center',
+                  fontSize: isMobile && sidebarOpen ? '0.95rem' : isMobile ? '1.5rem' : '2.125rem',
+                  lineHeight: isMobile ? 1.1 : 1.235,
+                  wordSpacing: isMobile && sidebarOpen ? '0.05em' : 'normal',
+                  width: '100%',
+                  wordWrap: 'break-word',
+                  hyphens: 'auto',
                 }}
               >
                 Password Reset
               </Typography>
 
               {message && (
-                <Alert severity="success" sx={{ width: '100%', mb: 2 }}>
+                <Alert severity="success" sx={{ width: '100%', mb: 2, fontSize: isMobile ? '0.8rem' : '0.875rem' }}>
                   {message}
                 </Alert>
               )}
               {error && (
-                <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
+                <Alert severity="error" sx={{ width: '100%', mb: 2, fontSize: isMobile ? '0.8rem' : '0.875rem' }}>
                   {error}
                 </Alert>
               )}
 
               <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
-                <Stack spacing={3}>
+                <Stack spacing={isMobile && sidebarOpen ? 1.5 : isMobile ? 2 : 3}>
                   <TextField
                     label="Email Address"
                     value={email}
@@ -193,10 +242,14 @@ const PasswordReset = () => {
                       '& .MuiOutlinedInput-root': {
                         fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
                         backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.09)' : '#ffffff',
+                        fontSize: isMobile && sidebarOpen ? '0.8rem' : isMobile ? '0.85rem' : '1rem',
                         '& .MuiOutlinedInput-input': {
-                          paddingTop: '14px',
-                          paddingBottom: '14px',
+                          paddingTop: isMobile && sidebarOpen ? '10px' : isMobile ? '12px' : '14px',
+                          paddingBottom: isMobile && sidebarOpen ? '10px' : isMobile ? '12px' : '14px',
                         },
+                      },
+                      '& .MuiInputLabel-root': {
+                        fontSize: isMobile && sidebarOpen ? '0.8rem' : isMobile ? '0.85rem' : '1rem',
                       },
                     }}
                   />
@@ -208,11 +261,11 @@ const PasswordReset = () => {
                   variant="contained"
                   disabled={loading}
                   sx={{
-                    mt: 2,
+                    mt: isMobile && sidebarOpen ? 1.5 : 2,
                     mb: 1,
-                    py: 1.25,
+                    py: isMobile && sidebarOpen ? 0.8 : isMobile ? 1 : 1.25,
                     fontWeight: 700,
-                    fontSize: '1rem',
+                    fontSize: isMobile && sidebarOpen ? '0.75rem' : isMobile ? '0.85rem' : '1rem',
                     borderRadius: '16px',
                     transition: 'all 0.3s ease',
                     '&:hover': {
@@ -223,15 +276,19 @@ const PasswordReset = () => {
                 >
                   {loading ? (
                     <>
-                      Sending... <CircularProgress size={20} sx={{ ml: 1, color: 'white' }} />
+                      Sending... <CircularProgress size={isMobile && sidebarOpen ? 14 : isMobile ? 16 : 20} sx={{ ml: 1, color: 'white' }} />
                     </>
                   ) : (
-                    'Send Password Reset Email'
+                    isMobile && sidebarOpen ? 'Send Reset Email' : 'Send Password Reset Email'
                   )}
                 </Button>
 
-                <Box sx={{ textAlign: 'center', mt: 2 }}>
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                <Box sx={{ textAlign: 'center', mt: isMobile && sidebarOpen ? 1.5 : 2 }}>
+                  <Typography variant="body2" sx={{ 
+                    color: 'text.secondary', 
+                    fontSize: isMobile && sidebarOpen ? '0.7rem' : isMobile ? '0.8rem' : '0.875rem',
+                    lineHeight: 1.4,
+                  }}>
                     Remembered your password?{' '}
                     <Link
                       href="#"
@@ -240,7 +297,10 @@ const PasswordReset = () => {
                         navigate('/login');
                       }}
                       underline="hover"
-                      sx={{ color: 'text.secondary' }}
+                      sx={{ 
+                        color: 'text.secondary', 
+                        fontSize: isMobile && sidebarOpen ? '0.7rem' : isMobile ? '0.8rem' : '0.875rem' 
+                      }}
                     >
                       Sign in
                     </Link>

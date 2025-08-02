@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Typography, Box, Button, Card, CardContent, CardMedia, Grid, Avatar, Stack } from '@mui/material';
+import { Typography, Box, Button, Card, CardContent, CardMedia, Grid, Avatar, Stack, useMediaQuery } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
 import { db, storage } from '../firebase';
@@ -57,12 +57,12 @@ const TiltCard = ({ children, style }) => {
     const mouseX = e.clientX;
     const mouseY = e.clientY;
 
-    const rotateX = ((mouseY - centerY) / (cardHeight / 2)) * 10; // max 10 deg
-    const rotateY = ((centerX - mouseX) / (cardWidth / 2)) * 10; // max 10 deg
+    const rotateX = ((mouseY - centerY) / (cardHeight / 2)) * 10;
+    const rotateY = ((centerX - mouseX) / (cardWidth / 2)) * 10;
 
     setTransformStyle({
       transform: `perspective(600px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-5px)`,
-      boxShadow: '0 0 15px 5px rgba(33, 150, 243, 0.7)', // blue glow
+      boxShadow: '0 0 15px 5px rgba(33, 150, 243, 0.7)',
       transition: 'transform 0.1s ease, box-shadow 0.1s ease',
     });
   };
@@ -106,10 +106,11 @@ const DashboardTitle = styled(Typography)(({ theme }) => ({
   },
 }));
 
-const UserPage = () => {
+const UserPage = ({ sidebarOpen }) => {
   const [projects, setProjects] = useState([]);
   const [hoveredStudent, setHoveredStudent] = useState(null);
   const navigate = useNavigate();
+  const isMobile = useMediaQuery('(max-width:600px)');
 
   useEffect(() => {
     const q = query(collection(db, 'projects'), orderBy('createdAt', 'desc'));
@@ -137,11 +138,15 @@ const UserPage = () => {
 
   return (
     <Box sx={{ 
-      p: { xs: 1, md: 2 },
+      p: isMobile ? (sidebarOpen ? '16px 16px 16px 124px' : '16px') : '24px 24px 24px 224px',
       maxWidth: '1200px',
       margin: '0 auto',
       background: 'linear-gradient(to bottom, #f9fbfd, #ffffff)',
       minHeight: '100vh',
+      transition: 'padding 0.3s ease',
+      boxSizing: 'border-box',
+      width: isMobile ? (sidebarOpen ? 'calc(100vw - 120px)' : '100vw') : 'calc(100vw - 200px)',
+      overflowX: 'hidden'
     }}>
       <Box sx={{ 
         display: 'flex', 
@@ -151,16 +156,22 @@ const UserPage = () => {
         gap: 2,
         mb: 4
       }}>
-        <DashboardTitle variant="h3">User Dashboard</DashboardTitle>
+        <DashboardTitle variant="h3" sx={{
+          fontSize: isMobile ? '1.5rem' : '2rem',
+          maxWidth: isMobile ? (sidebarOpen ? 'calc(100vw - 180px)' : 'calc(100vw - 80px)') : '100%'
+        }}>
+          USER DASHBOARD
+        </DashboardTitle>
         <GradientButton 
           variant="contained" 
           onClick={() => navigate('/project')}
           sx={{ 
             mb: { xs: 2, md: 0 },
-            alignSelf: 'flex-start'
+            alignSelf: 'flex-start',
+            width: isMobile ? '100%' : 'auto'
           }}
         >
-          Add New Project
+          ADD NEW PROJECT
         </GradientButton>
       </Box>
 
@@ -182,8 +193,15 @@ const UserPage = () => {
       ) : (
         <Grid container spacing={2} justifyContent="flex-start">
           {projects.map((project, index) => (
-            <Grid item xs={12} sm={6} md={4} key={project.id} sx={{ display: 'flex', justifyContent: 'center' }}>
-              <TiltCard style={{ animationDelay: `${index * 0.1}s`, width: 300 }}>
+            <Grid item xs={12} sm={6} md={4} key={project.id} sx={{ 
+              display: 'flex', 
+              justifyContent: 'center',
+              paddingLeft: isMobile && sidebarOpen ? '12px' : '0'
+            }}>
+              <TiltCard style={{ 
+                animationDelay: `${index * 0.1}s`, 
+                width: isMobile ? (sidebarOpen ? '260px' : '100%') : '300px'
+              }}>
                 {project.imageUrl && (
                   <CardMedia
                     component="img"
@@ -250,82 +268,82 @@ const UserPage = () => {
                     >
                       Students
                     </Typography>
-                   <Stack direction="row" spacing={1} sx={{ mb: 1, flexWrap: 'wrap' }}>
-  {project.students && project.students.map((student, studentIndex) => (
-    <Box
-      key={studentIndex}
-      sx={{
-        position: 'relative',
-        display: 'inline-block',
-        cursor: 'pointer',
-      }}
-      onMouseEnter={() => setHoveredStudent(`${project.id}-${studentIndex}`)}
-      onMouseLeave={() => setHoveredStudent(null)}
-    >
-      <Avatar 
-        alt={student.name} 
-        sx={{
-          width: 36,
-          height: 36,
-          border: '2px solid #e2e8f0',
-          transition: 'all 0.3s ease',
-          '&:hover': {
-            transform: 'scale(1.1)',
-            borderColor: '#2196F3'
-          }
-        }}
-      />
-      <Box
-        sx={{
-          position: 'absolute',
-          bottom: '110%',
-          left: studentIndex === 0 ? '0' : '50%', // Leftmost student tooltip aligns to left
-          transform: hoveredStudent === `${project.id}-${studentIndex}`
-            ? studentIndex === 0 
-              ? 'translateY(0)' 
-              : 'translateX(-50%) translateY(0)'
-            : studentIndex === 0
-              ? 'translateY(10px)'
-              : 'translateX(-50%) translateY(10px)',
-          bgcolor: 'background.paper',
-          color: 'text.primary',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.12)',
-          borderRadius: '8px',
-          p: 1.5,
-          minWidth: 180,
-          maxWidth: 200,
-          opacity: hoveredStudent === `${project.id}-${studentIndex}` ? 1 : 0,
-          pointerEvents: hoveredStudent === `${project.id}-${studentIndex}` ? 'auto' : 'none',
-          transition: 'opacity 0.3s ease, transform 0.3s ease',
-          zIndex: 10,
-          whiteSpace: 'normal',
-          textAlign: 'center',
-          '&:after': {
-            content: '""',
-            position: 'absolute',
-            top: '100%',
-            left: studentIndex === 0 ? '20px' : '50%',
-            transform: studentIndex === 0 ? 'none' : 'translateX(-50%)',
-            borderWidth: '8px',
-            borderStyle: 'solid',
-            borderColor: '#fff transparent transparent transparent',
-          }
-        }}
-      >
-        <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#2d3748' }}>
-          {student.name}
-        </Typography>
-        <Typography variant="body2" sx={{ 
-          wordBreak: 'break-word', 
-          color: '#718096',
-          overflowWrap: 'break-word'
-        }}>
-          {student.email}
-        </Typography>
-      </Box>
-    </Box>
-  ))}
-</Stack>
+                    <Stack direction="row" spacing={1} sx={{ mb: 1, flexWrap: 'wrap' }}>
+                      {project.students && project.students.map((student, studentIndex) => (
+                        <Box
+                          key={studentIndex}
+                          sx={{
+                            position: 'relative',
+                            display: 'inline-block',
+                            cursor: 'pointer',
+                          }}
+                          onMouseEnter={() => setHoveredStudent(`${project.id}-${studentIndex}`)}
+                          onMouseLeave={() => setHoveredStudent(null)}
+                        >
+                          <Avatar 
+                            alt={student.name} 
+                            sx={{
+                              width: 36,
+                              height: 36,
+                              border: '2px solid #e2e8f0',
+                              transition: 'all 0.3s ease',
+                              '&:hover': {
+                                transform: 'scale(1.1)',
+                                borderColor: '#2196F3'
+                              }
+                            }}
+                          />
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              bottom: '110%',
+                              left: studentIndex === 0 ? '0' : '50%',
+                              transform: hoveredStudent === `${project.id}-${studentIndex}`
+                                ? studentIndex === 0 
+                                  ? 'translateY(0)' 
+                                  : 'translateX(-50%) translateY(0)'
+                                : studentIndex === 0
+                                  ? 'translateY(10px)'
+                                  : 'translateX(-50%) translateY(10px)',
+                              bgcolor: 'background.paper',
+                              color: 'text.primary',
+                              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.12)',
+                              borderRadius: '8px',
+                              p: 1.5,
+                              minWidth: 180,
+                              maxWidth: 200,
+                              opacity: hoveredStudent === `${project.id}-${studentIndex}` ? 1 : 0,
+                              pointerEvents: hoveredStudent === `${project.id}-${studentIndex}` ? 'auto' : 'none',
+                              transition: 'opacity 0.3s ease, transform 0.3s ease',
+                              zIndex: 10,
+                              whiteSpace: 'normal',
+                              textAlign: 'center',
+                              '&:after': {
+                                content: '""',
+                                position: 'absolute',
+                                top: '100%',
+                                left: studentIndex === 0 ? '20px' : '50%',
+                                transform: studentIndex === 0 ? 'none' : 'translateX(-50%)',
+                                borderWidth: '8px',
+                                borderStyle: 'solid',
+                                borderColor: '#fff transparent transparent transparent',
+                              }
+                            }}
+                          >
+                            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#2d3748' }}>
+                              {student.name}
+                            </Typography>
+                            <Typography variant="body2" sx={{ 
+                              wordBreak: 'break-word', 
+                              color: '#718096',
+                              overflowWrap: 'break-word'
+                            }}>
+                              {student.email}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      ))}
+                    </Stack>
                   </Box>
                   
                   <Box>

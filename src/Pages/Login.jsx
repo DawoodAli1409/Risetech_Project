@@ -200,7 +200,7 @@ const Login = () => {
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ backgroundColor: 'transparent', minHeight: '100vh', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', pt: 1 }}>
-        <Container maxWidth="sm" sx={{ ml: '140px' }}>
+        <Container maxWidth="sm" sx={{ ml: { xs: 0, sm: 0 } }}>
           <Slide direction="down" in mountOnEnter timeout={800}>
             <Box
               sx={{
@@ -246,100 +246,100 @@ const Login = () => {
               )}
 
               <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ width: '100%' }}>
-                  <Stack spacing={3}>
-                    <TextField
-                      label="Email Address"
-                      {...register('email', {
-                        required: 'Email is required',
-                        pattern: {
-                          value: /^\S+@\S+$/i,
-                          message: 'Invalid email address',
-                        },
-                      })}
-                      error={!!errors.email}
-                      helperText={errors.email?.message}
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      InputLabelProps={{ shrink: true }}
-                    />
-                    <TextField
-                      label="Password"
-                      type="password"
-                      {...register('password', {
-                        required: 'Password is required',
-                        minLength: {
-                          value: 6,
-                          message: 'Password must be at least 6 characters',
-                        },
-                      })}
-                      error={!!errors.password}
-                      helperText={errors.password?.message}
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      InputLabelProps={{ shrink: true }}
-                    />
-                  </Stack>
-
-                  <Button
-                    type="submit"
-                    fullWidth
-                    variant="contained"
-                    disabled={isSubmitting || isLoading}
-                    sx={{
-                      mt: 2,
-                      mb: 1,
-                      py: 1.25,
-                      fontWeight: 700,
-                      fontSize: '1rem',
-                      borderRadius: '16px',
-                      transition: 'background-color 0.3s ease, transform 0.3s ease',
-                      '&:hover': {
-                        backgroundColor: '#004d40',
-                        transform: 'scale(1.05)',
+                <Stack spacing={3}>
+                  <TextField
+                    label="Email Address"
+                    {...register('email', {
+                      required: 'Email is required',
+                      pattern: {
+                        value: /^\S+@\S+$/i,
+                        message: 'Invalid email address',
                       },
-                    }}
-                  >
-                    {isSubmitting || isLoading ? (
-                      <>
-                        Signing In... <CircularProgress size={20} sx={{ ml: 1, color: 'white' }} />
-                      </>
-                    ) : (
-                      'Sign In'
-                    )}
-                  </Button>
-
-                  <Button
+                    })}
+                    error={!!errors.email}
+                    helperText={errors.email?.message}
                     fullWidth
                     variant="outlined"
-                    startIcon={<GoogleIcon />}
-                    onClick={handleGoogleSignIn}
-                    disabled={isLoading}
-                    sx={{
-                      py: 1.25,
-                      fontWeight: 700,
-                      fontSize: '1rem',
-                      borderRadius: '16px',
-                      transition: 'background-color 0.3s ease, transform 0.3s ease',
-                      borderColor: '#008080',
-                      color: '#008080',
-                      '&:hover': {
-                        backgroundColor: '#004d40',
-                        borderColor: '#004d40',
-                        color: '#ffffff',
-                        transform: 'scale(1.05)',
+                    size="small"
+                    InputLabelProps={{ shrink: true }}
+                  />
+                  <TextField
+                    label="Password"
+                    type="password"
+                    {...register('password', {
+                      required: 'Password is required',
+                      minLength: {
+                        value: 6,
+                        message: 'Password must be at least 6 characters',
                       },
-                    }}
-                  >
-                    {isLoading ? (
-                      <>
-                        Signing In... <CircularProgress size={20} sx={{ ml: 1 }} />
-                      </>
-                    ) : (
-                      'Sign in with Google'
-                    )}
-                  </Button>
+                    })}
+                    error={!!errors.password}
+                    helperText={errors.password?.message}
+                    fullWidth
+                    variant="outlined"
+                    size="small"
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Stack>
+
+                <Button
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  disabled={isSubmitting || isLoading}
+                  sx={{
+                    mt: 2,
+                    mb: 1,
+                    py: 1.25,
+                    fontWeight: 700,
+                    fontSize: '1rem',
+                    borderRadius: '16px',
+                    transition: 'background-color 0.3s ease, transform 0.3s ease',
+                    '&:hover': {
+                      backgroundColor: '#004d40',
+                      transform: 'scale(1.05)',
+                    },
+                  }}
+                >
+                  {isSubmitting || isLoading ? (
+                    <>
+                      Signing In... <CircularProgress size={20} sx={{ ml: 1, color: 'white' }} />
+                    </>
+                  ) : (
+                    'Sign In'
+                  )}
+                </Button>
+
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  startIcon={<GoogleIcon />}
+                  onClick={handleGoogleSignIn}
+                  disabled={isLoading}
+                  sx={{
+                    py: 1.25,
+                    fontWeight: 700,
+                    fontSize: '1rem',
+                    borderRadius: '16px',
+                    transition: 'background-color 0.3s ease, transform 0.3s ease',
+                    borderColor: '#008080',
+                    color: '#008080',
+                    '&:hover': {
+                      backgroundColor: '#004d40',
+                      borderColor: '#004d40',
+                      color: '#ffffff',
+                      transform: 'scale(1.05)',
+                    },
+                  }}
+                >
+                  {isLoading ? (
+                    <>
+                      Signing In... <CircularProgress size={20} sx={{ ml: 1 }} />
+                    </>
+                  ) : (
+                    'Sign in with Google'
+                  )}
+                </Button>
 
                 <Box sx={{ textAlign: 'center', mt: 2 }}>
                   <Typography variant="body2" sx={{ mb: 1 }}>

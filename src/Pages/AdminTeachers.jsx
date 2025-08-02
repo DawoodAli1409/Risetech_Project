@@ -3,8 +3,8 @@ import { useForm, Controller } from 'react-hook-form';
 import { db, auth } from '../firebase';
 import { collection, addDoc, getDocs, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Switch, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Typography, CircularProgress, Fab, FormControlLabel, RadioGroup, Radio, FormLabel } from '@mui/material';
-import { styled } from '@mui/system';
+import { Switch, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Typography, CircularProgress, Fab, FormControlLabel, RadioGroup, Radio, FormLabel, useMediaQuery } from '@mui/material';
+import { styled, keyframes } from '@mui/system';
 import { Box } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -12,6 +12,13 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { useSpring, animated } from 'react-spring';
 
 const storage = getStorage();
+
+// Animation keyframes
+const gradientAnimation = keyframes`
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+`;
 
 const TeacherCard = ({ teacher, onEdit, onDelete }) => {
   const [hovered, setHovered] = useState(false);
@@ -98,12 +105,26 @@ const GradientButton = styled(Button)(({ theme }) => ({
   '&:hover': {
     transform: 'translateY(-2px)',
     boxShadow: '0 5px 8px 3px rgba(33, 203, 243, .4)',
-    animation: `gradientAnimation 3s ease infinite`,
+    animation: `${gradientAnimation} 3s ease infinite`,
     backgroundSize: '200% 200%',
   },
+  [theme.breakpoints.down('sm')]: {
+    position: 'fixed',
+    bottom: '20px',
+    right: '20px',
+    zIndex: 1000,
+    width: '56px',
+    height: '56px',
+    borderRadius: '50%',
+    padding: '0',
+    minWidth: '0',
+    '& .MuiButton-startIcon': {
+      margin: '0',
+    }
+  }
 }));
 
-const AdminTeachers = () => {
+const AdminTeachers = ({ sidebarOpen }) => {
   const { register, handleSubmit, reset, control, setValue, formState: { errors }, clearErrors } = useForm({
     mode: 'onSubmit',
     defaultValues: {
@@ -117,6 +138,7 @@ const AdminTeachers = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState(null);
   const [profilePicPreview, setProfilePicPreview] = useState('');
+  const isMobile = useMediaQuery('(max-width:600px)');
 
   useEffect(() => {
     fetchTeachers();
@@ -214,38 +236,75 @@ const AdminTeachers = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <Box sx={{ 
+      p: isMobile ? (sidebarOpen ? '16px 16px 16px 124px' : '16px') : '24px 24px 24px 224px',
+      maxWidth: '1200px',
+      margin: '0 auto',
+      background: 'linear-gradient(to bottom, #f9fbfd, #ffffff)',
+      minHeight: '100vh',
+      transition: 'padding 0.3s ease',
+      boxSizing: 'border-box',
+      width: isMobile ? (sidebarOpen ? 'calc(100vw - 120px)' : '100vw') : 'calc(100vw - 200px)',
+      overflowX: 'hidden'
+    }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
-        <DashboardTitle variant="h4">
-          Teacher Management
+        <DashboardTitle variant="h4" sx={{
+          fontSize: isMobile ? '1.5rem' : '2rem',
+          maxWidth: isMobile ? (sidebarOpen ? 'calc(100vw - 180px)' : 'calc(100vw - 80px)') : '100%'
+        }}>
+          TEACHER MANAGEMENT
         </DashboardTitle>
-        <GradientButton variant="contained" onClick={() => openDialog()}>
-          Add Teacher
-        </GradientButton>
+        {!isMobile && (
+          <GradientButton variant="contained" onClick={() => openDialog()}>
+            ADD TEACHER
+          </GradientButton>
+        )}
       </Box>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      {isMobile && (
+        <GradientButton 
+          variant="contained" 
+          onClick={() => openDialog()}
+          startIcon={<AddIcon />}
+          sx={{
+            '& .MuiButton-label': {
+              display: 'none'
+            }
+          }}
+        />
+      )}
+
+      <Box sx={{ 
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
+        gap: 3,
+        width: '100%'
+      }}>
         {fetching ? (
-          <div className="col-span-full flex justify-center items-center space-x-2">
+          <Box sx={{ gridColumn: '1/-1', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2 }}>
             <CircularProgress size={24} />
             <Typography>Loading teachers...</Typography>
-          </div>
+          </Box>
         ) : teachers.length === 0 ? (
-          <Typography className="col-span-full text-center text-gray-600">
-            No teachers found. Add your first teacher using the button below.
+          <Typography sx={{ gridColumn: '1/-1', textAlign: 'center', color: 'text.secondary' }}>
+            No teachers found. Add your first teacher using the button above.
           </Typography>
         ) : (
           teachers.map(teacher => (
-            <TeacherCard
-              key={teacher.id}
-              teacher={teacher}
-              onEdit={openDialog}
-              onDelete={handleDelete}
-            />
+            <Box key={teacher.id} sx={{ 
+              display: 'flex',
+              justifyContent: 'center',
+              paddingLeft: isMobile && sidebarOpen ? '12px' : '0'
+            }}>
+              <TeacherCard
+                teacher={teacher}
+                onEdit={openDialog}
+                onDelete={handleDelete}
+              />
+            </Box>
           ))
         )}
-      </div>
-
+      </Box>
 
       <Dialog open={dialogOpen} onClose={closeDialog} maxWidth="sm" fullWidth>
         <DialogTitle>{editingTeacher ? 'Edit Teacher' : 'Add Teacher'}</DialogTitle>
@@ -343,7 +402,7 @@ const AdminTeachers = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </div>
+    </Box>
   );
 };
 
