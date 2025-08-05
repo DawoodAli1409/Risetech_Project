@@ -180,7 +180,8 @@ const Login = () => {
       // If user doesn't exist, create a new user record
       if (!dawoodUser) {
         try {
-          const createUserUrl = `https://firestore.googleapis.com/v1/projects/internship-2025-465209/databases/(default)/documents/user/${user.uid}`;
+          // Create user in the correct database (dawood)
+          const createUserUrl = `https://firestore.googleapis.com/v1/projects/internship-2025-465209/databases/dawood/documents/user/${user.uid}`;
           const newUserData = {
             fields: {
               Name: { stringValue: user.displayName || user.email.split('@')[0] },
@@ -192,8 +193,12 @@ const Login = () => {
           
           await axios.patch(createUserUrl, newUserData);
           
-          // Fetch the newly created user
-          dawoodUser = await fetchUserFromDawood(user.uid);
+          // Set the newly created user data
+          dawoodUser = {
+            Name: user.displayName || user.email.split('@')[0],
+            Email: user.email,
+            Role: 'user'
+          };
         } catch (createError) {
           console.error('Error creating new user:', createError);
           // Fallback to default values if creation fails
@@ -206,7 +211,7 @@ const Login = () => {
       }
 
       const userName = dawoodUser?.Name || user.displayName || user.email.split('@')[0];
-      const userRole = dawoodUser?.Role || (user.email?.endsWith('@admin.com') ? 'admin' : 'user');
+      const userRole = dawoodUser?.Role || 'user';
 
       dispatch(
         setUser({
@@ -218,7 +223,8 @@ const Login = () => {
         })
       );
 
-      navigate(userRole === 'admin' ? '/admin' : '/user', { replace: true });
+      // Navigate to user page for all users (including newly registered)
+      navigate('/user', { replace: true });
     } catch (error) {
       console.error('Google sign-in error:', error);
       setAuthError('Google sign-in failed. Please try again.');
