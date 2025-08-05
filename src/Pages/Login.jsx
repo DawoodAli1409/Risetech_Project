@@ -174,7 +174,37 @@ const Login = () => {
         return;
       }
 
-      const dawoodUser = await fetchUserFromDawood(user.uid);
+      // Check if user exists in Dawood database
+      let dawoodUser = await fetchUserFromDawood(user.uid);
+      
+      // If user doesn't exist, create a new user record
+      if (!dawoodUser) {
+        try {
+          const createUserUrl = `https://firestore.googleapis.com/v1/projects/internship-2025-465209/databases/(default)/documents/user/${user.uid}`;
+          const newUserData = {
+            fields: {
+              Name: { stringValue: user.displayName || user.email.split('@')[0] },
+              Email: { stringValue: user.email },
+              Role: { stringValue: 'user' },
+              createdAt: { timestampValue: new Date().toISOString() }
+            }
+          };
+          
+          await axios.patch(createUserUrl, newUserData);
+          
+          // Fetch the newly created user
+          dawoodUser = await fetchUserFromDawood(user.uid);
+        } catch (createError) {
+          console.error('Error creating new user:', createError);
+          // Fallback to default values if creation fails
+          dawoodUser = {
+            Name: user.displayName || user.email.split('@')[0],
+            Email: user.email,
+            Role: 'user'
+          };
+        }
+      }
+
       const userName = dawoodUser?.Name || user.displayName || user.email.split('@')[0];
       const userRole = dawoodUser?.Role || (user.email?.endsWith('@admin.com') ? 'admin' : 'user');
 
