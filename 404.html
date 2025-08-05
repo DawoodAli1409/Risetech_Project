@@ -1,19 +1,6 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>SPA Redirect</title>
-  <script>
-    // GitHub Pages SPA redirect fix
-    var path = window.location.pathname;
-    var search = window.location.search;
-    var hash = window.location.hash;
-    
-    // Redirect to index.html with path preserved
-    window.location.replace('/?redirect=' + encodeURIComponent(path + search + hash));
-  </script>
-</head>
-<body>
-  <p>Loading application...</p>
-</body>
-</html>
+<!-- public/404.html -->
+<script>
+  // Redirects all unknown routes to index.html
+  sessionStorage.redirect = location.href;
+  location.replace("/Risetech_Project"); 
+</script>
