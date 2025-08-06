@@ -25,7 +25,7 @@ import {
 import { auth } from '../firebase';
 import { addUser, addMail } from '../firebaseDawood';
 
-const Register = ({ sidebarOpen }) => {
+const Register = () => {
   const navigate = useNavigate();
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
   const [darkMode] = useState(prefersDarkMode);
@@ -206,23 +206,21 @@ const Register = ({ sidebarOpen }) => {
         justifyContent: 'center',
         pt: isMobile ? '64px' : '20px',
         pb: '40px',
-        width: isMobile && sidebarOpen ? 'calc(100% - 100px)' : '100vw',
+        width: '100vw',
         position: 'relative',
-        left: isMobile && sidebarOpen ? '100px' : 0,
+        left: 0,
         right: 0,
-        transition: 'left 0.3s ease, width 0.3s ease',
         overflowY: 'scroll',
         overflowX: 'hidden',
       }}>
         <Container 
           maxWidth="sm" 
           sx={{
-            width: isMobile && sidebarOpen ? 'calc(100% - 120px)' : isMobile ? '100%' : '500px',
+            width: isMobile ? '100%' : '500px',
             maxWidth: isMobile ? '316px' : '500px',
             mx: 'auto',
             px: isMobile ? 1 : 3,
-            transform: isMobile && sidebarOpen ? 'scale(0.9)' : 'scale(1)',
-            transition: 'transform 0.3s ease, width 0.3s ease',
+            transform: 'scale(1)',
             overflow: 'visible',
             height: 'auto',
             minHeight: 'auto',

@@ -84,18 +84,30 @@ function AuthInitializer({ children }) {
 const router = createBrowserRouter(
   [
     {
+      path: '/login',
+      element: <Login />,
+    },
+    {
+      path: '/register',
+      element: <Register />,
+    },
+    {
+      path: '/verify-email',
+      element: <VerifyEmail />,
+    },
+    {
+      path: '/password-reset',
+      element: <PasswordReset />,
+    },
+    {
+      path: '/',
+      element: <Navigate to="/login" replace />,
+    },
+    {
       path: '/',
       element: <Layout />,
       errorElement: <ErrorPage />,
       children: [
-        {
-          path: '',
-          element: <Navigate to="/login" replace />,
-        },
-        {
-          path: 'login',
-          element: <Login />,
-        },
         {
           path: 'user',
           element: (
@@ -135,18 +147,6 @@ const router = createBrowserRouter(
               </PrivateRoute>
             </AuthInitializer>
           ),
-        },
-        {
-          path: 'register',
-          element: <Register />,
-        },
-        {
-          path: 'verify-email',
-          element: <VerifyEmail />,
-        },
-        {
-          path: 'password-reset',
-          element: <PasswordReset />,
         },
       ],
     },

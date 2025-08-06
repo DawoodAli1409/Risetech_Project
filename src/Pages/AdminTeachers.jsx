@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { db, auth } from '../firebase';
 import { collection, addDoc, getDocs, updateDoc, doc, deleteDoc } from 'firebase/firestore';
@@ -10,6 +10,7 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useSpring, animated } from 'react-spring';
+import { useDropzone } from 'react-dropzone';
 
 const storage = getStorage();
 
@@ -176,6 +177,22 @@ const AdminTeachers = ({ sidebarOpen }) => {
     setDialogOpen(true);
   };
 
+  // Dropzone setup
+  const onDrop = useCallback((acceptedFiles) => {
+    if (acceptedFiles && acceptedFiles.length > 0) {
+      setValue('profilePic', acceptedFiles, { shouldValidate: true });
+      setProfilePicPreview(URL.createObjectURL(acceptedFiles[0]));
+      clearErrors('profilePic');
+    }
+  }, [setValue, clearErrors]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: { 'image/*': [] },
+    multiple: false,
+    disabled: loading,
+  });
+
   const closeDialog = () => {
     setDialogOpen(false);
     setEditingTeacher(null);
@@ -306,7 +323,18 @@ const AdminTeachers = ({ sidebarOpen }) => {
         )}
       </Box>
 
-      <Dialog open={dialogOpen} onClose={closeDialog} maxWidth="sm" fullWidth>
+      <Dialog
+        open={dialogOpen}
+        onClose={closeDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            width: '75vw',
+            maxWidth: '75vw',
+          }
+        }}
+      >
         <DialogTitle>{editingTeacher ? 'Edit Teacher' : 'Add Teacher'}</DialogTitle>
         <DialogContent>
           <form id="teacher-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6" style={{ padding: '16px' }}>
@@ -372,19 +400,25 @@ const AdminTeachers = ({ sidebarOpen }) => {
                 </RadioGroup>
               )}
             />
-            <input
-              type="file"
-              accept="image/*"
-              {...register('profilePic')}
-              onChange={(e) => {
-                if (e.target.files?.[0]) {
-                  setProfilePicPreview(URL.createObjectURL(e.target.files[0]));
-                  clearErrors('profilePic');
-                }
+            <Box
+              {...getRootProps()}
+              sx={{
+                border: '2px dashed #2196F3',
+                borderRadius: 1,
+                p: 2,
+                textAlign: 'center',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                color: isDragActive ? '#1976d2' : 'inherit',
+                mb: 2,
               }}
-              disabled={loading}
-              style={{ marginTop: 16, marginBottom: 16 }}
-            />
+            >
+              <input {...getInputProps()} />
+              {isDragActive ? (
+                <Typography>Drop the image here ...</Typography>
+              ) : (
+                <Typography>Drag 'n' drop an image here, or click to select one</Typography>
+              )}
+            </Box>
             {profilePicPreview && (
               <img
                 src={profilePicPreview}

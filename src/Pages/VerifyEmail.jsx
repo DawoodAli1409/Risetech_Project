@@ -140,8 +140,8 @@ const VerifyEmail = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <Box sx={{ backgroundColor: 'transparent', minHeight: '100vh', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', pt: 1 }}>
-        <Container maxWidth="sm" sx={{ ml: isSmallScreen ? '20px' : '140px' }}>
+      <Box sx={{ backgroundColor: 'transparent', minHeight: '100vh', display: 'flex', alignItems: 'flex-start', justifyContent: { xs: 'center', md: 'center' }, pt: 1 }}>
+        <Container maxWidth="sm" sx={{ ml: isSmallScreen ? '20px' : '140px', mx: { xs: 'auto', md: 'auto' } }}>
           <Slide direction="down" in={slideIn} mountOnEnter timeout={800}>
             <Box
               sx={{

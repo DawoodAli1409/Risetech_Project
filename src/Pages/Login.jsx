@@ -235,8 +235,8 @@ const Login = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <Box sx={{ backgroundColor: 'transparent', minHeight: '100vh', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', pt: 1 }}>
-        <Container maxWidth="sm" sx={{ ml: { xs: 0, sm: 0 } }}>
+      <Box sx={{ backgroundColor: 'transparent', minHeight: '100vh', display: 'flex', alignItems: 'flex-start', justifyContent: { xs: 'center', md: 'center' }, pt: 1 }}>
+        <Container maxWidth="sm" sx={{ ml: { xs: 0, sm: 0 }, mx: { xs: 'auto', md: 'auto' } }}>
           <Slide direction="down" in mountOnEnter timeout={800}>
             <Box
               sx={{
