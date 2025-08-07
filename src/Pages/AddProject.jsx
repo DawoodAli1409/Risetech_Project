@@ -20,6 +20,7 @@ import { collection, getDocs, addDoc, serverTimestamp } from 'firebase/firestore
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage, auth } from '../firebase';
 import { useNavigate } from 'react-router-dom';
+import { useDropzone } from 'react-dropzone';
 
 const AddProject = () => {
   const { control, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm({
@@ -288,25 +289,57 @@ const AddProject = () => {
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Typography>Project Image</Typography>
           </AccordionSummary>
-          <AccordionDetails>
-            <Controller
-              name="imageFile"
-              control={control}
-              rules={{ required: 'Project image is required' }}
-              render={({ field }) => (
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => field.onChange(e.target.files)}
-                />
-              )}
-            />
-            {errors.imageFile && (
-              <Typography color="error" variant="body2">
-                {errors.imageFile.message}
-              </Typography>
-            )}
-          </AccordionDetails>
+        <AccordionDetails>
+          <Controller
+            name="imageFile"
+            control={control}
+            rules={{ required: 'Project image is required' }}
+            render={({ field }) => {
+              const onDrop = (acceptedFiles) => {
+                field.onChange(acceptedFiles);
+              };
+
+              const { getRootProps, getInputProps, isDragActive } = useDropzone({
+                onDrop,
+                accept: { 'image/*': [] },
+                multiple: false,
+              });
+
+              return (
+                <div
+                  {...getRootProps()}
+                  style={{
+                    border: '2px dashed #1976d2',
+                    padding: '20px',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    backgroundColor: isDragActive ? '#e3f2fd' : 'transparent',
+                  }}
+                >
+                  <input {...getInputProps()} />
+                  {field.value && field.value.length > 0 ? (
+                    <img
+                      src={URL.createObjectURL(field.value[0])}
+                      alt="Preview"
+                      style={{ maxWidth: '100%', maxHeight: 200, marginTop: 10 }}
+                    />
+                  ) : (
+                    <Typography>
+                      {isDragActive
+                        ? 'Drop the image here ...'
+                        : 'Drag & drop an image here, or click to select one'}
+                    </Typography>
+                  )}
+                </div>
+              );
+            }}
+          />
+          {errors.imageFile && (
+            <Typography color="error" variant="body2">
+              {errors.imageFile.message}
+            </Typography>
+          )}
+        </AccordionDetails>
         </Accordion>
 
         <Box sx={{ mt: 3 }}>
