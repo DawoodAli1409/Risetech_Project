@@ -1,4 +1,4 @@
-flask
-google-cloud-firestore
-google-cloud-storage
-python-docx
+flask==2.3.2
+google-cloud-firestore==2.11.0
+python-docx==0.8.11
+google-cloud-storage==2.10.0

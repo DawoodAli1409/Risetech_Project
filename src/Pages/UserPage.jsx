@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Typography, Box, Button, Card, CardContent, CardMedia, Grid, Avatar, Stack, useMediaQuery } from '@mui/material';
+import { Typography, Box, Button, Card, CardContent, CardMedia, Grid, Avatar, Stack, useMediaQuery, IconButton } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, doc, deleteDoc } from 'firebase/firestore';
 import { db, storage } from '../firebase';
-import { getDownloadURL, ref } from 'firebase/storage';
+import { getDownloadURL, ref, deleteObject } from 'firebase/storage';
 import { styled, keyframes } from '@mui/system';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 // Animation keyframes
 const fadeIn = keyframes`
@@ -128,13 +129,54 @@ const UserPage = ({ sidebarOpen }) => {
             imageUrl = '';
           }
         }
-        projectsData.push({ id: doc.id, ...data, imageUrl });
+
+        // Process student avatars
+        const studentsWithAvatars = await Promise.all(
+          (data.students || []).map(async (student) => {
+            let avatarUrl = '';
+            if (student.avatarPath) {
+              try {
+                const avatarRef = ref(storage, student.avatarPath);
+                avatarUrl = await getDownloadURL(avatarRef);
+              } catch (error) {
+                console.error('Error getting student avatar:', error);
+              }
+            }
+            return { ...student, avatarUrl };
+          })
+        );
+
+        projectsData.push({ 
+          id: doc.id, 
+          ...data, 
+          imageUrl,
+          students: studentsWithAvatars 
+        });
       }
       setProjects(projectsData);
     });
 
     return () => unsubscribe();
   }, []);
+
+  const handleDeleteProject = async (projectId, imageUrl) => {
+    try {
+      // Delete project document from Firestore
+      await deleteDoc(doc(db, 'projects', projectId));
+      
+      // Delete project image from Storage if it exists
+      if (imageUrl && !imageUrl.startsWith('http')) {
+        const imageRef = ref(storage, imageUrl);
+        await deleteObject(imageRef).catch(error => {
+          console.error('Error deleting project image:', error);
+        });
+      }
+      
+      console.log('Project deleted successfully');
+    } catch (error) {
+      console.error('Error deleting project:', error);
+    }
+  };
 
   return (
     <Box sx={{ 
@@ -202,19 +244,37 @@ const UserPage = ({ sidebarOpen }) => {
                 animationDelay: `${index * 0.1}s`, 
                 width: isMobile ? (sidebarOpen ? '260px' : '100%') : '300px'
               }}>
-                {project.imageUrl && (
-                  <CardMedia
-                    component="img"
-                    height="180"
-                    image={project.imageUrl}
-                    alt={project.title}
+                <Box sx={{ position: 'relative' }}>
+                  {project.imageUrl && (
+                    <CardMedia
+                      component="img"
+                      height="180"
+                      image={project.imageUrl}
+                      alt={project.title}
+                      sx={{
+                        objectFit: 'cover',
+                        borderTopLeftRadius: '12px',
+                        borderTopRightRadius: '12px',
+                      }}
+                    />
+                  )}
+                  <IconButton
+                    aria-label="delete"
+                    onClick={() => handleDeleteProject(project.id, project.imageUrl)}
                     sx={{
-                      objectFit: 'cover',
-                      borderTopLeftRadius: '12px',
-                      borderTopRightRadius: '12px',
+                      position: 'absolute',
+                      top: 8,
+                      right: 8,
+                      backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                      '&:hover': {
+                        backgroundColor: 'rgba(255, 0, 0, 0.8)',
+                        color: 'white'
+                      }
                     }}
-                  />
-                )}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
                 <CardContent sx={{ p: 3 }}>
                   <Typography 
                     variant="h6" 
@@ -282,6 +342,7 @@ const UserPage = ({ sidebarOpen }) => {
                         >
                           <Avatar 
                             alt={student.name} 
+                            src={student.avatarUrl || ''}
                             sx={{
                               width: 36,
                               height: 36,

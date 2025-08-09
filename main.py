@@ -1,88 +1,93 @@
 import os
-from flask import Flask, request
+from tempfile import NamedTemporaryFile
+from flask import Flask, send_file, jsonify
 from google.cloud import firestore, storage
 from docx import Document
-from tempfile import NamedTemporaryFile
-import base64
-import json
+from docx.shared import Pt
+from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 
 app = Flask(__name__)
 
-# Initialize clients
-db = firestore.Client()
+# Initialize Firestore and Storage clients
+db = firestore.Client(database='dawood')
 storage_client = storage.Client()
+BUCKET_NAME = 'internship-2025-465209.appspot.com'
 
-# Your Firebase Storage bucket name - replace with your actual bucket name
-BUCKET_NAME = 'internship-2025-465209.firebasestorage.app'
+def create_project_page(doc, project):
+    """Adds a project to the document as a new page"""
+    # Add project title
+    title = doc.add_heading(project['title'], level=1)
+    title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    
+    # Add description
+    doc.add_paragraph("Description:", style='Heading 2')
+    doc.add_paragraph(project.get('description', 'N/A'))
+    
+    # Add supervisor info
+    doc.add_paragraph("Supervisor:", style='Heading 2')
+    doc.add_paragraph(project.get('supervisorId', 'N/A'))
+    
+    # Add students
+    if 'students' in project:
+        doc.add_paragraph("Team Members:", style='Heading 2')
+        for student in project['students']:
+            doc.add_paragraph(f"• {student['name']} ({student['email']})")
+    
+    # Add page break (except after last project)
+    doc.add_page_break()
 
-def create_docx_file(project_data):
-    # Create a docx file with project data
-    doc = Document()
-    doc.add_heading('Project Document', 0)
-    for key, value in project_data.items():
-        doc.add_paragraph(f"{key}: {value}")
-    # Save to a temporary file
-    tmp = NamedTemporaryFile(delete=False, suffix='.docx')
-    doc.save(tmp.name)
-    return tmp.name
-
-def process_firestore_event(event_data):
-    # Parse Firestore document fields
-    fields = event_data.get('value', {}).get('fields', {})
-    project_data = {}
-    for k, v in fields.items():
-        if 'stringValue' in v:
-            project_data[k] = v['stringValue']
-        elif 'integerValue' in v:
-            project_data[k] = v['integerValue']
-        elif 'doubleValue' in v:
-            project_data[k] = v['doubleValue']
-        elif 'booleanValue' in v:
-            project_data[k] = v['booleanValue']
-        else:
-            project_data[k] = str(v)
-
-    # Create docx file
-    docx_path = create_docx_file(project_data)
-
-    # Upload to Firebase Storage under 'documents/' folder
-    bucket = storage_client.bucket(BUCKET_NAME)
-    # Extract document ID from event resource name
-    resource_name = event_data.get('value', {}).get('name', '')
-    doc_id = resource_name.split('/')[-1] if resource_name else 'unknown_doc'
-    blob = bucket.blob(f"documents/{doc_id}.docx")
-    blob.upload_from_filename(docx_path)
-    blob.make_public()
-    doc_url = blob.public_url
-
-    # Update Firestore document with doc URL in 'documents' field
-    doc_ref = db.collection('projects').document(doc_id)
-    doc_ref.update({'documents': doc_url})
-
-    # Clean up temp file
-    os.remove(docx_path)
-
-    return doc_url
-
-@app.route('/', methods=['POST'])
-def handle_event():
-    envelope = request.get_json()
-    if not envelope:
-        return 'Bad Request: no JSON payload', 400
-
-    # Cloud Event data is base64 encoded in 'message.data'
-    if 'message' in envelope:
-        pubsub_message = envelope['message']
-        if 'data' in pubsub_message:
-            data_str = base64.b64decode(pubsub_message['data']).decode('utf-8')
-            event_data = json.loads(data_str)
-            doc_url = process_firestore_event(event_data)
-            return f'Docx created and uploaded: {doc_url}', 200
-        else:
-            return 'Bad Request: no data in message', 400
-    else:
-        return 'Bad Request: no message field', 400
+@app.route('/generate-projects-report', methods=['GET'])
+def generate_report():
+    """Endpoint to generate and return DOCX report"""
+    try:
+        print("Starting report generation...")
+        
+        # 1. Get all projects from Firestore
+        projects_ref = db.collection('projects')
+        docs = projects_ref.stream()
+        
+        # 2. Create new document
+        doc = Document()
+        
+        # Set default font
+        style = doc.styles['Normal']
+        font = style.font
+        font.name = 'Arial'
+        font.size = Pt(11)
+        
+        # 3. Add each project to the document
+        for doc_num, doc_snapshot in enumerate(docs):
+            project = doc_snapshot.to_dict()
+            print(f"Adding project {doc_num+1}: {project.get('title')}")
+            create_project_page(doc, project)
+        
+        # 4. Save to temporary file
+        with NamedTemporaryFile(delete=False, suffix='.docx') as tmp:
+            doc.save(tmp.name)
+            print(f"Temporary file created at: {tmp.name}")
+            
+            # 5. Upload to Google Storage (optional)
+            blob = storage_client.bucket(BUCKET_NAME).blob('reports/all_projects.docx')
+            blob.upload_from_filename(tmp.name)
+            print(f"Uploaded to Storage: {blob.public_url}")
+            
+            # 6. Return the file for download
+            return send_file(
+                tmp.name,
+                as_attachment=True,
+                download_name='all_projects.docx',
+                mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            )
+            
+    except Exception as e:
+        print(f"Error generating report: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+        
+    finally:
+        # Clean up temporary file
+        if 'tmp' in locals():
+            os.unlink(tmp.name)
+            print("Temporary file removed")
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 8080))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)), debug=True)
